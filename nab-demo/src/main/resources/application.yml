@@ -1,0 +1,27 @@
+server:
+  port: 9090
+debug: true
+
+springdoc:
+  api-docs:
+    path: "/api" # http://localhost:9090/api for raw yml
+  swagger-ui:
+    path: "/swagger" # http://localhost:9090/swagger for swagger interaction ui
+
+spring:
+  datasource:
+    url: "jdbc:h2:mem:testdb"
+    driverClassName: "org.h2.Driver"
+    username: "sa"
+    password: "password"
+  jpa:
+    database-platform: "org.hibernate.dialect.H2Dialect"
+  h2:
+    console:
+      enabled: true # http://localhost:9090/h2-console
+
+client:
+  voucher-generator:
+    url: "http://localhost:9090" # expect we have this client up and running
+    response-timeout: 120000 # milis
+    delay-response-time: 110 # second, this for when you used VoucherGeneratorController instead of 3rd

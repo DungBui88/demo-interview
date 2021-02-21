@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    url: "jdbc:h2:mem:testdb"
+    driverClassName: "org.h2.Driver"
+    username: "sa"
+    password: "password"
+  jpa:
+    database-platform: "org.hibernate.dialect.H2Dialect"
+  h2:
+    console:
+      enabled: true # http://localhost:9090/h2-console
+
+client:
+  voucher-generator:
+    response-timeout: 10000 # milis
+    delay-response-time: 8 #second, this for testing !!!
