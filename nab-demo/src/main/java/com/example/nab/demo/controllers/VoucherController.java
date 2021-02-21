@@ -4,6 +4,7 @@ import com.example.nab.demo.dtos.CreateVoucherResponse;
 import com.example.nab.demo.dtos.UpdateVoucherInstruction;
 import com.example.nab.demo.dtos.VoucherGeneratingInstruction;
 import com.example.nab.demo.models.Voucher;
+import com.example.nab.demo.models.VoucherStatus;
 import com.example.nab.demo.service.PhoneService;
 import com.example.nab.demo.service.VoucherManagementService;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -73,6 +74,15 @@ public class VoucherController {
         return ResponseEntity.ok(voucher);
     }
 
+    /**
+     * When we receive create voucher request, we will create temporary voucher with ID for tracking and return in
+     * the response.
+     * The {@link VoucherManagementService#generateSerialNumber(Voucher)} will process in async and update the voucher
+     * details in the database.
+     * If the instruction on request has user Phone Number, will send phone message after finished generate serial number
+     * @param voucherData
+     * @return
+     */
     @PutMapping
     @Operation(summary = "Generate new voucher")
     @ApiResponses(value = {
@@ -83,7 +93,7 @@ public class VoucherController {
     public ResponseEntity<CreateVoucherResponse> createVoucher(@RequestBody VoucherGeneratingInstruction voucherData) {
         Voucher voucher = voucherService.createVoucher(voucherData.getUserName(), voucherData.getUserPhoneNumber(),
                 voucherData.getVoucherType(), voucherData.getPaymentTransactionId());
-        voucherService.generateVoucherSerial(voucher);
+        voucherService.generateSerialNumber(voucher);
         CreateVoucherResponse response = new CreateVoucherResponse();
         response.setId(voucher.getId());
         return ResponseEntity.created(WebMvcLinkBuilder.linkTo(VoucherController.class).slash(voucher.getId()).withSelfRel().toUri())
@@ -119,7 +129,10 @@ public class VoucherController {
 
         toBeUpdated.setUserPhoneNumber(phoneNumber);
         voucherService.updateVoucher(toBeUpdated);
-        phoneService.sendVoucherMessage(toBeUpdated);
+
+        if (toBeUpdated.getStatus() == VoucherStatus.CREATED) {
+            phoneService.sendVoucherMessage(toBeUpdated);
+        }
 
         return ResponseEntity.ok().build();
     }

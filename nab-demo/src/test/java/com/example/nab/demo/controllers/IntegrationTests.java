@@ -52,6 +52,22 @@ class IntegrationTests {
         voucherGeneratorClient.init();
     }
 
+    /**
+     * The standard work flow for generate voucher:
+     * Case:
+     * Arrange: user purchase without log in.
+     * Act:
+     * - After user finish payment process on the website, the website will send request generate new voucher
+     * with voucher type and payment transaction code
+     * - BE received request PUT /vouchers
+     * - BE generate new voucher ID (for tracking and callback)
+     * - BE store to the database
+     * - BE Process async call third 3rd (VoucherGeneratorClient) for generate new voucher code
+     * - BE return created status with voucher id
+     * - FE will call GET /vouchers/{ID} for period of time.
+     * Assert:
+     * - FE will success received new voucher data after period of time.
+     */
     @Test
     void testSuccessGenerateVoucherAfterPeriodOfTime() throws Exception {
         VoucherGeneratingInstruction requestContent = new VoucherGeneratingInstruction();
@@ -65,14 +81,16 @@ class IntegrationTests {
 
         String voucherId = mapper.readValue(result.getResponse().getContentAsString(), CreateVoucherResponse.class).getId();
         assertNotNull(voucherId);
+
         result = mockMvc.perform(get("/vouchers/" + voucherId)).andExpect(status().is2xxSuccessful()).andReturn();
         Voucher voucher = mapper.readValue(result.getResponse().getContentAsString(), Voucher.class);
-        assertNull(voucher.getSeriesNumbers());
+        assertNull(voucher.getSerialNumbers());
 
         waitForSecond(clientResponseTimeOut + 1);
+
         result = mockMvc.perform(get("/vouchers/" + voucherId)).andExpect(status().is2xxSuccessful()).andReturn();
         voucher = mapper.readValue(result.getResponse().getContentAsString(), Voucher.class);
-        assertNotNull(voucher.getSeriesNumbers());
+        assertNotNull(voucher.getSerialNumbers());
     }
 
     private void waitForSecond(long i) {

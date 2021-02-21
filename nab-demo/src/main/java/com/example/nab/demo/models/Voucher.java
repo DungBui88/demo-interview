@@ -25,11 +25,17 @@ public class Voucher {
     private String userName;
     private String userPhoneNumber;
     private String voucherType;
-    private String seriesNumbers;
+    private String serialNumbers;
     private String paymentTransactionId;
     private LocalDateTime createdTime;
     private LocalDateTime expiredTime;
+
+    /**
+     * utility property
+     */
+
     private VoucherStatus status;
+    private boolean isSentPhoneMessage = false;
 
     public Voucher(String userName, String userPhoneNumber, String voucherType, String paymentTransactionId) {
         this.userName = userName;

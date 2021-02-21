@@ -16,3 +16,22 @@ Problem Statement
    website, but it needs to be secured.
 6. Assume that the payment has been done before the website call to the services to get the voucher
    code.
+
+How to start project:
+- Maven build: mvn clean install
+- Starting with java stand alone: cd target && java -jar *.jar
+
+Notes:
+The spring boot application using in-memory h2 database, also supported swagger UI and h2 UI.
+Default app will start on port 9090, for interaction, for more detail used please take a look at application.yml.
+Please use http://localhost:9090/swagger for using APIs and http://localhost:9090/h2-console for managing database.
+
+About technologies and library used:
+- Spring boot
+- Spring security
+- Spring actuator for application health check.
+- Spring webflux for connection to client/service using WebClient
+- Spring doc for document API and exposing swagger-ui
+- Spring data jpa + h2database for storing data
+- Spring retry for handling errors and recover system.
+- Lombok for support coding

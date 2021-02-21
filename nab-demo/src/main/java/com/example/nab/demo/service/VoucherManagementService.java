@@ -61,16 +61,15 @@ public class VoucherManagementService {
 
     @Async
     @Retryable(maxAttempts = 1, recover = "recoverGenerateVoucher")
-    public void generateVoucherSerial(Voucher voucher) {
+    public void generateSerialNumber(Voucher voucher) {
         // expect this will be long, thread will wait
         VoucherGeneratorCreateVoucherResponse responseData = getVoucherGeneratorClient().generateVoucher(voucher.getVoucherType());
-        voucher.setSeriesNumbers(responseData.getSeriesNumber());
+        voucher.setSerialNumbers(responseData.getSeriesNumber());
         voucher.setExpiredTime(responseData.getExpiredDate());
         voucher.setStatus(VoucherStatus.CREATED);
         voucher = getVoucherRepository().save(voucher);
-        if (voucher.getUserPhoneNumber() != null) {
-            getPhoneService().sendVoucherMessage(voucher);
-        }
+
+        sendNotificationMessage(voucher);
     }
 
     @Recover
@@ -80,8 +79,19 @@ public class VoucherManagementService {
 
         voucher.setStatus(VoucherStatus.CREATING_ERROR);
         getVoucherRepository().save(voucher);
+
+        sendWarningMessage(voucher);
+    }
+
+    private void sendNotificationMessage(Voucher voucher) {
         if (voucher.getUserPhoneNumber() != null) {
-            phoneService.sendErrorMessage(voucher);
+            getPhoneService().sendVoucherMessage(voucher);
+        }
+    }
+
+    private void sendWarningMessage(Voucher voucher) {
+        if (voucher.getUserPhoneNumber() != null) {
+            getPhoneService().sendErrorMessage(voucher);
         }
     }
 }

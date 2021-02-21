@@ -10,8 +10,6 @@ import com.example.nab.demo.service.PhoneService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,7 +21,6 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import javax.ws.rs.InternalServerErrorException;
 import java.time.LocalDateTime;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -59,10 +56,9 @@ class VoucherControllerTests {
      * - BE generate new voucher ID (for tracking and callback)
      * - BE store to the database
      * - BE Process async call third 3rd (VoucherGeneratorClient) for generate new voucher code
-     * - BE return accepted status TODO: adding callback link too !!
-     * - FE will call GET /vouchers/{ID} for period of time.
-     * Assert:
-     * - FE will success received new voucher data on time.
+     * - BE return created status
+     * Assert
+     * - FE will call GET /vouchers/{ID} for getting voucher serialNumber.
      */
     @Test
     void testSuccessGenerateVoucherTransactionFlow() throws Exception {
@@ -80,7 +76,7 @@ class VoucherControllerTests {
         assertNotNull(voucherId);
         result = mockMvc.perform(get("/vouchers/" + voucherId)).andExpect(status().is2xxSuccessful()).andReturn();
         Voucher voucher = mapper.readValue(result.getResponse().getContentAsString(), Voucher.class);
-        assertNotNull(voucher.getSeriesNumbers());
+        assertNotNull(voucher.getSerialNumbers());
     }
 
     /**
@@ -94,9 +90,7 @@ class VoucherControllerTests {
      * - BE generate new voucher ID (for tracking and callback)
      * - BE store to the database
      * - BE Process async call third 3rd (VoucherGeneratorClient) for generate new voucher code
-     * - BE return accepted status and voucher ID TODO: adding callback link too !!
-     * - FE will call GET /vouchers/{ID} for period of time.
-     * - FE will not success received new voucher data on time.
+     * - BE return created status and voucher ID
      * - FE will send the PATCH /vouchers/{ID} which user phone number
      * Assert:
      * After BE finished generating voucher, will send the voucher code to user via Phone Number,
@@ -127,7 +121,7 @@ class VoucherControllerTests {
 
         result = mockMvc.perform(get("/vouchers/" + voucherId)).andExpect(status().is2xxSuccessful()).andReturn();
         Voucher voucher = mapper.readValue(result.getResponse().getContentAsString(), Voucher.class);
-        assertNotNull(voucher.getSeriesNumbers());
+        assertNotNull(voucher.getSerialNumbers());
         assertEquals("1234567890", voucher.getUserPhoneNumber());
         verify(phoneService, times(1)).sendVoucherMessage(any());
     }
@@ -143,12 +137,11 @@ class VoucherControllerTests {
      * - BE generate new voucher ID (for tracking and callback)
      * - BE store to the database
      * - BE Process async call third 3rd (VoucherGeneratorClient) for generate new voucher code
-     * - BE return accepted status and voucher ID TODO: adding callback link too !!
-     * - FE will call GET /vouchers/{ID} for period of time.
-     * - FE will not success received new voucher data on time.
-     * - FE will send the PATCH /vouchers/{ID} with user phone number
+     * - BE return accepted status and voucher ID
+     * - BE has exception when generating voucher serialNumber.
      * Assert:
-     * When failed to generate the voucher, BE will send the message with payment code to the user's Phone Number,
+     * When failed to generate the voucher serialNumber,
+     * BE will send the message with payment code to the user's Phone Number(if have),
      * the record should be updated on the database as well
      */
     @Test
@@ -168,7 +161,7 @@ class VoucherControllerTests {
 
         result = mockMvc.perform(get("/vouchers/" + voucherId)).andExpect(status().is2xxSuccessful()).andReturn();
         Voucher voucher = mapper.readValue(result.getResponse().getContentAsString(), Voucher.class);
-        assertNull(voucher.getSeriesNumbers());
+        assertNull(voucher.getSerialNumbers());
         verify(phoneService, times(1)).sendErrorMessage(any());
     }
 

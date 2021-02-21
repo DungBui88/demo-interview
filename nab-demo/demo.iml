@@ -7,8 +7,6 @@
       <sourceFolder url="file://$MODULE_DIR$/src/main/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/main/resources" type="java-resource" />
       <sourceFolder url="file://$MODULE_DIR$/src/test/java" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/target/generated-sources" isTestSource="false" generated="true" />
-      <sourceFolder url="file://$MODULE_DIR$/target/generated-test-sources" isTestSource="true" generated="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/test/resources" type="java-test-resource" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
@@ -109,21 +107,8 @@
     <orderEntry type="library" name="Maven: io.netty:netty-handler-proxy:4.1.59.Final" level="project" />
     <orderEntry type="library" name="Maven: io.netty:netty-codec-socks:4.1.59.Final" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-webflux:5.3.4" level="project" />
-    <orderEntry type="library" name="Maven: org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j:2.0.0" level="project" />
-    <orderEntry type="library" name="Maven: org.springframework.cloud:spring-cloud-starter:3.0.1" level="project" />
-    <orderEntry type="library" name="Maven: org.springframework.cloud:spring-cloud-context:3.0.1" level="project" />
-    <orderEntry type="library" name="Maven: org.springframework.security:spring-security-crypto:5.4.5" level="project" />
-    <orderEntry type="library" name="Maven: org.springframework.cloud:spring-cloud-commons:3.0.1" level="project" />
-    <orderEntry type="library" name="Maven: org.springframework.security:spring-security-rsa:1.0.9.RELEASE" level="project" />
-    <orderEntry type="library" name="Maven: org.bouncycastle:bcpkix-jdk15on:1.64" level="project" />
-    <orderEntry type="library" name="Maven: org.bouncycastle:bcprov-jdk15on:1.64" level="project" />
-    <orderEntry type="library" name="Maven: org.springframework.cloud:spring-cloud-circuitbreaker-resilience4j:2.0.0" level="project" />
-    <orderEntry type="library" name="Maven: io.github.resilience4j:resilience4j-circuitbreaker:1.6.1" level="project" />
-    <orderEntry type="library" name="Maven: io.vavr:vavr:0.10.2" level="project" />
-    <orderEntry type="library" name="Maven: io.vavr:vavr-match:0.10.2" level="project" />
-    <orderEntry type="library" name="Maven: io.github.resilience4j:resilience4j-core:1.6.1" level="project" />
-    <orderEntry type="library" name="Maven: io.github.resilience4j:resilience4j-timelimiter:1.6.1" level="project" />
-    <orderEntry type="library" name="Maven: io.github.resilience4j:resilience4j-reactor:1.6.1" level="project" />
+    <orderEntry type="library" name="Maven: io.projectreactor:reactor-core:3.4.3" level="project" />
+    <orderEntry type="library" name="Maven: org.reactivestreams:reactive-streams:1.0.3" level="project" />
     <orderEntry type="library" name="Maven: org.springdoc:springdoc-openapi-ui:1.5.2" level="project" />
     <orderEntry type="library" name="Maven: org.springdoc:springdoc-openapi-webmvc-core:1.5.2" level="project" />
     <orderEntry type="library" name="Maven: org.springdoc:springdoc-openapi-common:1.5.2" level="project" />
@@ -194,18 +179,7 @@
     <orderEntry type="library" name="Maven: org.springframework:spring-jcl:5.3.4" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.springframework:spring-test:5.3.4" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.xmlunit:xmlunit-core:2.7.0" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: io.projectreactor:reactor-test:3.4.3" level="project" />
-    <orderEntry type="library" name="Maven: io.projectreactor:reactor-core:3.4.3" level="project" />
-    <orderEntry type="library" name="Maven: org.reactivestreams:reactive-streams:1.0.3" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.springframework.security:spring-security-test:5.4.5" level="project" />
     <orderEntry type="library" name="Maven: org.springframework.security:spring-security-core:5.4.5" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: com.squareup.okhttp3:okhttp:4.0.1" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: com.squareup.okio:okio:2.2.2" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.jetbrains.kotlin:kotlin-stdlib:1.4.30" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.jetbrains.kotlin:kotlin-stdlib-common:1.4.30" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.jetbrains:annotations:13.0" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: com.squareup.okhttp3:mockwebserver:4.0.1" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: junit:junit:4.13.2" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.hamcrest:hamcrest-core:2.2" level="project" />
   </component>
 </module>
