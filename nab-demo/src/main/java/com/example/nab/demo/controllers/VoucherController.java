@@ -20,7 +20,7 @@ import javax.ws.rs.BadRequestException;
 import java.time.LocalDateTime;
 import java.util.Collection;
 
-import static com.example.nab.demo.utils.StringSupport.isValidatePhoneNumber;
+import static com.example.nab.demo.utils.StringSupport.isValidPhoneNumber;
 
 @RestController
 @RequestMapping("/vouchers")
@@ -40,7 +40,7 @@ public class VoucherController {
     public ResponseEntity<Collection<Voucher>> getVouchers(
             @RequestParam(value = "phoneNumber", required = false) String phoneNumber,
             @RequestParam(value = "paymentTransactionId", required = false) String paymentTransactionId) {
-        if (phoneNumber != null && !isValidatePhoneNumber(phoneNumber)) {
+        if (phoneNumber != null && !isValidPhoneNumber(phoneNumber)) {
             throw new BadRequestException("Invalid phone number"); // should not go with detail error message as sensitive data
         }
 
@@ -95,8 +95,8 @@ public class VoucherController {
                 voucherData.getVoucherType(), voucherData.getPaymentTransactionId());
         voucherService.generateSerialNumber(voucher);
         CreateVoucherResponse response = new CreateVoucherResponse();
-        response.setId(voucher.getId());
-        return ResponseEntity.created(WebMvcLinkBuilder.linkTo(VoucherController.class).slash(voucher.getId()).withSelfRel().toUri())
+        response.setId(voucher.getVoucherId());
+        return ResponseEntity.created(WebMvcLinkBuilder.linkTo(VoucherController.class).slash(voucher.getVoucherId()).withSelfRel().toUri())
                 .body(response);
     }
 
@@ -110,7 +110,7 @@ public class VoucherController {
             @PathVariable String voucherId,
             @RequestBody UpdateVoucherInstruction voucherData) {
         String phoneNumber = voucherData.getPhoneNumber();
-        if (phoneNumber != null && !isValidatePhoneNumber(phoneNumber)) {
+        if (phoneNumber != null && !isValidPhoneNumber(phoneNumber)) {
             throw new BadRequestException("Invalid phone number"); // should not go with detail error message as sensitive data
         }
 

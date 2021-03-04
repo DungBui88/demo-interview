@@ -8,11 +8,14 @@ import com.example.nab.demo.repositories.VoucherRepository;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.history.Revision;
+import org.springframework.data.history.Revisions;
 import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -51,7 +54,7 @@ public class VoucherManagementService {
     }
 
     public void updateVoucher(Voucher toBeUpdated) {
-        voucherRepository.save(toBeUpdated);
+        voucherRepository.saveAndFlush(toBeUpdated);
     }
 
     public Voucher createVoucher(String userName, String userPhoneNumber, String voucherType, String paymentTransactionId) {
@@ -65,6 +68,7 @@ public class VoucherManagementService {
         // expect this will be long, thread will wait
         VoucherGeneratorCreateVoucherResponse responseData = getVoucherGeneratorClient().generateVoucher(voucher.getVoucherType());
         voucher.setSerialNumbers(responseData.getSeriesNumber());
+        voucher.setCreatedTime(LocalDateTime.now());
         voucher.setExpiredTime(responseData.getExpiredDate());
         voucher.setStatus(VoucherStatus.CREATED);
         voucher = getVoucherRepository().save(voucher);
@@ -81,6 +85,11 @@ public class VoucherManagementService {
         getVoucherRepository().save(voucher);
 
         sendWarningMessage(voucher);
+    }
+
+    public List<Revision<Integer, Voucher>> getRevisions(String voucherId) {
+        Revisions<Integer, Voucher> revisions = voucherRepository.findRevisions(voucherId);
+        return revisions.getContent();
     }
 
     private void sendNotificationMessage(Voucher voucher) {

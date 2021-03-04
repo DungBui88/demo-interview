@@ -9,12 +9,16 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.history.Revision;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.ws.rs.BadRequestException;
 
-import static com.example.nab.demo.utils.StringSupport.isValidatePhoneNumber;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.example.nab.demo.utils.StringSupport.isValidPhoneNumber;
 
 @RestController
 @RequestMapping("/support")
@@ -36,7 +40,7 @@ public class SupportController {
             @PathVariable("voucherId") String voucherId,
             @RequestBody ResendVoucherRequest instruction) {
         String phoneNumber = instruction.getPhoneNumber();
-        if (!isValidatePhoneNumber(phoneNumber)) {
+        if (!isValidPhoneNumber(phoneNumber)) {
             throw new BadRequestException("Invalid phone number");
         }
 
@@ -50,5 +54,15 @@ public class SupportController {
         phoneService.sendVoucherMessage(voucher);
 
         return ResponseEntity.accepted().build();
+    }
+
+    @GetMapping("/audit/{voucherId}") // TODO: better name ?
+    @Operation(summary = "Get audit detail of Voucher")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Ok"),
+            @ApiResponse(responseCode = "404", description = "Not found", content = @Content) })
+    public ResponseEntity<List<Voucher>> getVoucherAudit(@PathVariable("voucherId") String voucherId) {
+        // TODO: should make proper DTO with included revision number and revision instant
+        return ResponseEntity.ok(voucherService.getRevisions(voucherId).stream().map(Revision::getEntity).collect(Collectors.toList()));
     }
 }

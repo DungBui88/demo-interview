@@ -15,6 +15,7 @@ public class VoucherGeneratingInstruction {
      * Optional as user may want to send the code to his phone from beginning
      * the website will have option like checkbox sending voucher direct to phone instead of showing on the website
      */
+    // TODO: validate phone format
     private String userPhoneNumber;
 
     /**
