@@ -13,10 +13,13 @@ import org.springframework.data.history.Revisions;
 import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -53,38 +56,43 @@ public class VoucherManagementService {
         return Collections.emptyList();
     }
 
-    public void updateVoucher(Voucher toBeUpdated) {
-        voucherRepository.saveAndFlush(toBeUpdated);
+    public Voucher updateVoucher(Voucher toBeUpdated) {
+        Assert.notNull(toBeUpdated.getVoucherId(), "Voucher Id should not null.");
+        voucherRepository.findById(toBeUpdated.getVoucherId())
+                .orElseThrow(() -> new IllegalArgumentException("Voucher is not exits."));
+        return voucherRepository.saveAndFlush(toBeUpdated);
     }
 
     public Voucher createVoucher(String userName, String userPhoneNumber, String voucherType, String paymentTransactionId) {
         Voucher toBeCreated = new Voucher(userName, userPhoneNumber, voucherType, paymentTransactionId);
-        return getVoucherRepository().save(toBeCreated);
+        return getVoucherRepository().saveAndFlush(toBeCreated);
     }
 
     @Async
-    @Retryable(maxAttempts = 1, recover = "recoverGenerateVoucher")
-    public void generateSerialNumber(Voucher voucher) {
+    @Retryable(maxAttempts = 1, recover = "recoverGenerateSerialNumber")
+    public Future<Voucher> generateSerialNumber(Voucher voucher) {
         // expect this will be long, thread will wait
         VoucherGeneratorCreateVoucherResponse responseData = getVoucherGeneratorClient().generateVoucher(voucher.getVoucherType());
-        voucher.setSerialNumbers(responseData.getSeriesNumber());
+        voucher.setSerialNumber(responseData.getSeriesNumber());
         voucher.setCreatedTime(LocalDateTime.now());
         voucher.setExpiredTime(responseData.getExpiredDate());
         voucher.setStatus(VoucherStatus.CREATED);
-        voucher = getVoucherRepository().save(voucher);
+        voucher = getVoucherRepository().saveAndFlush(voucher);
 
         sendNotificationMessage(voucher);
+        return AsyncResult.forValue(voucher);
     }
 
     @Recover
-    public void recoverGenerateVoucher(Exception ex, Voucher voucher) {
+    public Future<Voucher> recoverGenerateSerialNumber(Exception ex, Voucher voucher) {
         log.warn("Recover fail create Voucher");
         log.error(ex);
 
         voucher.setStatus(VoucherStatus.CREATING_ERROR);
-        getVoucherRepository().save(voucher);
+        getVoucherRepository().saveAndFlush(voucher);
 
         sendWarningMessage(voucher);
+        return AsyncResult.forValue(voucher);
     }
 
     public List<Revision<Integer, Voucher>> getRevisions(String voucherId) {

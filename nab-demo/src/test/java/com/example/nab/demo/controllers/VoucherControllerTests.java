@@ -1,14 +1,14 @@
 package com.example.nab.demo.controllers;
 
+import com.example.nab.demo.TestSupportBase;
 import com.example.nab.demo.clients.VoucherGeneratorClient;
 import com.example.nab.demo.dtos.CreateVoucherResponse;
 import com.example.nab.demo.dtos.UpdateVoucherInstruction;
 import com.example.nab.demo.dtos.VoucherGeneratingInstruction;
-import com.example.nab.demo.dtos.VoucherGeneratorCreateVoucherResponse;
 import com.example.nab.demo.models.Voucher;
+import com.example.nab.demo.models.VoucherStatus;
 import com.example.nab.demo.service.PhoneService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -20,9 +20,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import javax.ws.rs.InternalServerErrorException;
-import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -33,71 +33,56 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles("test")
-class VoucherControllerTests {
+class VoucherControllerTests extends TestSupportBase {
 
     @MockBean
     private VoucherGeneratorClient voucherGeneratorClient;
     @MockBean
     private PhoneService phoneService;
+
     @Autowired
     private MockMvc mockMvc;
     @Autowired
     private ObjectMapper mapper;
 
     /**
-     * The standard work flow for generate voucher:
-     * Case:
-     * Arrange: user purchase without log in.
-     * Act:
-     * - After user finish payment process on the website, the website will send request generate new voucher
-     * with voucher type and payment transaction code
-     * - BE received request PUT /vouchers
-     * - BE generate new voucher ID (for tracking and callback)
-     * - BE store to the database
-     * - BE Process async call third 3rd (VoucherGeneratorClient) for generate new voucher code
-     * - BE return created status
-     * Assert
-     * - FE will call GET /vouchers/{ID} for getting voucher serialNumber.
+     * PUT /vouchers {@link VoucherGeneratingInstruction}
+     * Success create new voucher without user name or user phone number
      */
     @Test
-    void testSuccessGenerateVoucherTransactionFlow() throws Exception {
+    void testSuccessCreateVoucher() throws Exception {
         when(voucherGeneratorClient.generateVoucher(anyString())).thenReturn(createClientResponse(("type1")));
         VoucherGeneratingInstruction requestContent = new VoucherGeneratingInstruction();
         requestContent.setVoucherType("type1");
         requestContent.setPaymentTransactionId("123");
-        MvcResult result = mockMvc.perform(put("/vouchers")
+        MvcResult response = mockMvc.perform(put("/vouchers")
                 .accept(MediaType.APPLICATION_JSON)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(requestContent)))
                 .andExpect(status().isCreated()).andReturn();
 
-        String voucherId = mapper.readValue(result.getResponse().getContentAsString(), CreateVoucherResponse.class).getId();
+        String voucherId = mapper.readValue(response.getResponse().getContentAsString(), CreateVoucherResponse.class).getId();
         assertNotNull(voucherId);
-        result = mockMvc.perform(get("/vouchers/" + voucherId)).andExpect(status().is2xxSuccessful()).andReturn();
-        Voucher voucher = mapper.readValue(result.getResponse().getContentAsString(), Voucher.class);
-        assertNotNull(voucher.getSerialNumbers());
+        verify(voucherGeneratorClient, times(1)).generateVoucher(eq("type1"));
+
+        response = mockMvc.perform(get("/vouchers/" + voucherId)).andExpect(status().is2xxSuccessful()).andReturn();
+        Voucher result = mapper.readValue(response.getResponse().getContentAsString(), Voucher.class);
+        assertNotNull(result.getVoucherId());
+        assertEquals("type1", result.getVoucherType());
+        assertEquals("123", result.getPaymentTransactionId());
+        assertNull(result.getUserName());
+        assertNull(result.getUserPhoneNumber());
+        assertNotNull(result.getSerialNumber());
     }
 
     /**
-     * The standard work flow for generate voucher:
-     * Case:
-     * Arrange: user purchase without log in.
-     * Act:
-     * - After user finish payment process on the website, the website will send request generate new voucher
-     * with voucher type and payment transaction code
-     * - BE received request PUT /vouchers
-     * - BE generate new voucher ID (for tracking and callback)
-     * - BE store to the database
-     * - BE Process async call third 3rd (VoucherGeneratorClient) for generate new voucher code
-     * - BE return created status and voucher ID
-     * - FE will send the PATCH /vouchers/{ID} which user phone number
-     * Assert:
-     * After BE finished generating voucher, will send the voucher code to user via Phone Number,
-     * the record should be updated on the database as well
+     * PUT /vouchers {@link VoucherGeneratingInstruction}
+     * Create voucher without Phone number, expect not send phone message.
+     * PATCH /vouchers/{id} {@link UpdateVoucherInstruction}
+     * Update voucher Phone Number, expect send phone message with serial number.
      */
     @Test
-    void testSuccessGenerateVoucherAfterFEWaitingTimeout() throws Exception {
+    void testSuccessCreateVoucherAndSendPhoneMessageWhenUpdatePhoneNumber() throws Exception {
         when(voucherGeneratorClient.generateVoucher(anyString())).thenReturn(createClientResponse(("type1")));
 
         VoucherGeneratingInstruction requestContent = new VoucherGeneratingInstruction();
@@ -118,34 +103,20 @@ class VoucherControllerTests {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(requestUpdateContent)))
                 .andExpect(status().isOk());
+        verify(phoneService, times(1)).sendVoucherMessage(any());
 
         result = mockMvc.perform(get("/vouchers/" + voucherId)).andExpect(status().is2xxSuccessful()).andReturn();
         Voucher voucher = mapper.readValue(result.getResponse().getContentAsString(), Voucher.class);
-        assertNotNull(voucher.getSerialNumbers());
+        assertNotNull(voucher.getSerialNumber());
         assertEquals("1234567890", voucher.getUserPhoneNumber());
-        verify(phoneService, times(1)).sendVoucherMessage(any());
     }
 
     /**
-     * The standard work flow for generate voucher:
-     * Case:
-     * Arrange: user purchase without log in.
-     * Act:
-     * - After user finish payment process on the website, the website will send request generate new voucher
-     * with voucher type and payment transaction code
-     * - BE received request PUT /vouchers
-     * - BE generate new voucher ID (for tracking and callback)
-     * - BE store to the database
-     * - BE Process async call third 3rd (VoucherGeneratorClient) for generate new voucher code
-     * - BE return accepted status and voucher ID
-     * - BE has exception when generating voucher serialNumber.
-     * Assert:
-     * When failed to generate the voucher serialNumber,
-     * BE will send the message with payment code to the user's Phone Number(if have),
-     * the record should be updated on the database as well
+     * Create voucher with user phone number.
+     * Expected send error messages to phone number when voucher generator client has exception.
      */
     @Test
-    void testFailsGenerateVoucherAfterFEWaitingTimeout() throws Exception {
+    void testFailsCreateVoucherClientError() throws Exception {
         when(voucherGeneratorClient.generateVoucher(anyString())).thenThrow(new InternalServerErrorException());
 
         VoucherGeneratingInstruction requestContent = new VoucherGeneratingInstruction();
@@ -157,19 +128,16 @@ class VoucherControllerTests {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(requestContent)))
                 .andExpect(status().isCreated()).andReturn();
-        String voucherId = mapper.readValue(result.getResponse().getContentAsString(), CreateVoucherResponse.class).getId();
+        verify(voucherGeneratorClient, times(1)).generateVoucher(eq("type1"));
 
+        // make sure async and recover method finished
+        waitForPeriod(1);
+
+        String voucherId = mapper.readValue(result.getResponse().getContentAsString(), CreateVoucherResponse.class).getId();
         result = mockMvc.perform(get("/vouchers/" + voucherId)).andExpect(status().is2xxSuccessful()).andReturn();
         Voucher voucher = mapper.readValue(result.getResponse().getContentAsString(), Voucher.class);
-        assertNull(voucher.getSerialNumbers());
+        assertEquals(VoucherStatus.CREATING_ERROR, voucher.getStatus());
+        assertNull(voucher.getSerialNumber());
         verify(phoneService, times(1)).sendErrorMessage(any());
-    }
-
-    private VoucherGeneratorCreateVoucherResponse createClientResponse(String type) {
-        VoucherGeneratorCreateVoucherResponse generatedVoucher = new VoucherGeneratorCreateVoucherResponse();
-        generatedVoucher.setSeriesNumber(RandomStringUtils.randomAlphanumeric(10));
-        generatedVoucher.setExpiredDate(LocalDateTime.now().plusMonths(1));
-        generatedVoucher.setType(type);
-        return generatedVoucher;
     }
 }

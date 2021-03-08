@@ -13,8 +13,6 @@ import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 
 import javax.annotation.PostConstruct;
-import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
 @Component
 @Data
@@ -22,23 +20,19 @@ public class VoucherGeneratorClient {
 
     @Value("${client.voucher-generator.url:http://localhost:9090}")
     private String url;
-    @Value("${client.voucher-generator.response-timeout:120000}")
-    private Long clientResponseTimeOut;
+    @Value("${client.voucher-generator.response-timeout:120}")
+    private int clientResponseTimeOut;
 
     private WebClient client;
 
     @PostConstruct
     public void init() {
-        HttpClient httpClient = HttpClient.create()
-                .baseUrl(getUrl())
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, getClientResponseTimeOut().intValue())
-                .responseTimeout(Duration.ofMillis(getClientResponseTimeOut()))
-                .doOnConnected(conn ->
-                        conn.addHandlerLast(new ReadTimeoutHandler(getClientResponseTimeOut(), TimeUnit.MILLISECONDS))
-                                .addHandlerLast(new WriteTimeoutHandler(getClientResponseTimeOut(), TimeUnit.MILLISECONDS)));
-
         setClient(WebClient.builder()
-                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .baseUrl(getUrl())
+                .clientConnector(new ReactorClientHttpConnector(HttpClient.create()
+                        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, getClientResponseTimeOut() * 1000)
+                        .doOnConnected(c -> c.addHandlerLast(new ReadTimeoutHandler(getClientResponseTimeOut()))
+                                .addHandlerLast(new WriteTimeoutHandler(getClientResponseTimeOut())))))
                 .build());
     }
 

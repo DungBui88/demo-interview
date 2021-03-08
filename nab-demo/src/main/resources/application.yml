@@ -23,5 +23,5 @@ spring:
 client:
   voucher-generator:
     url: "http://localhost:9090" # expect we have this client up and running
-    response-timeout: 120000 # milis
+    response-timeout: 120 # second
     delay-response-time: 110 # second, this for when you used VoucherGeneratorController instead of 3rd

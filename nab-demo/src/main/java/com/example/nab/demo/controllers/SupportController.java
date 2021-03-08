@@ -1,6 +1,7 @@
 package com.example.nab.demo.controllers;
 
 import com.example.nab.demo.dtos.ResendVoucherRequest;
+import com.example.nab.demo.dtos.VoucherRevisionDetail;
 import com.example.nab.demo.models.Voucher;
 import com.example.nab.demo.service.PhoneService;
 import com.example.nab.demo.service.VoucherManagementService;
@@ -8,8 +9,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.history.Revision;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -61,8 +62,13 @@ public class SupportController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Ok"),
             @ApiResponse(responseCode = "404", description = "Not found", content = @Content) })
-    public ResponseEntity<List<Voucher>> getVoucherAudit(@PathVariable("voucherId") String voucherId) {
-        // TODO: should make proper DTO with included revision number and revision instant
-        return ResponseEntity.ok(voucherService.getRevisions(voucherId).stream().map(Revision::getEntity).collect(Collectors.toList()));
+    public ResponseEntity<List<VoucherRevisionDetail>> getVoucherAudit(@PathVariable("voucherId") String voucherId) {
+        return ResponseEntity.ok(voucherService.getRevisions(voucherId).stream().map(voucherRevision -> {
+            VoucherRevisionDetail detail = new VoucherRevisionDetail();
+            BeanUtils.copyProperties(voucherRevision.getEntity(), detail);
+            detail.setRevisionNumber(voucherRevision.getRevisionNumber().orElse(0));
+            detail.setRevisionInstant(voucherRevision.getRevisionInstant().orElse(null));
+            return detail;
+        }).collect(Collectors.toList()));
     }
 }

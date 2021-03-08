@@ -1,12 +1,11 @@
 package com.example.nab.demo.controllers;
 
+import com.example.nab.demo.TestSupportBase;
 import com.example.nab.demo.clients.VoucherGeneratorClient;
 import com.example.nab.demo.dtos.CreateVoucherResponse;
 import com.example.nab.demo.dtos.VoucherGeneratingInstruction;
-import com.example.nab.demo.dtos.VoucherGeneratorCreateVoucherResponse;
 import com.example.nab.demo.models.Voucher;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,9 +17,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.time.LocalDateTime;
-import java.util.concurrent.TimeUnit;
-
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -29,10 +25,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
-class IntegrationTests {
+class IntegrationTests extends TestSupportBase {
 
-    @Value("${client.voucher-generator.response-timeout:120000}")
-    private Long clientResponseTimeOut;
+    @Value("${client.voucher-generator.delay-response-time:110}")
+    private int delayTime;
 
     @LocalServerPort
     private int port;
@@ -48,7 +44,6 @@ class IntegrationTests {
     @BeforeEach
     void init() {
         voucherGeneratorClient.setUrl("http://localhost:" + port);
-        voucherGeneratorClient.setClientResponseTimeOut(clientResponseTimeOut + 1);
         voucherGeneratorClient.init();
     }
 
@@ -84,28 +79,12 @@ class IntegrationTests {
 
         result = mockMvc.perform(get("/vouchers/" + voucherId)).andExpect(status().is2xxSuccessful()).andReturn();
         Voucher voucher = mapper.readValue(result.getResponse().getContentAsString(), Voucher.class);
-        assertNull(voucher.getSerialNumbers());
+        assertNull(voucher.getSerialNumber());
 
-        waitForSecond(clientResponseTimeOut + 1);
+        waitForPeriod(delayTime + 3);
 
         result = mockMvc.perform(get("/vouchers/" + voucherId)).andExpect(status().is2xxSuccessful()).andReturn();
         voucher = mapper.readValue(result.getResponse().getContentAsString(), Voucher.class);
-        assertNotNull(voucher.getSerialNumbers());
-    }
-
-    private void waitForSecond(long i) {
-        try {
-            TimeUnit.MILLISECONDS.sleep(i);
-        } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
-        }
-    }
-
-    private VoucherGeneratorCreateVoucherResponse createClientResponse(String type) {
-        VoucherGeneratorCreateVoucherResponse generatedVoucher = new VoucherGeneratorCreateVoucherResponse();
-        generatedVoucher.setSeriesNumber(RandomStringUtils.randomAlphanumeric(10));
-        generatedVoucher.setExpiredDate(LocalDateTime.now().plusMonths(1));
-        generatedVoucher.setType(type);
-        return generatedVoucher;
+        assertNotNull(voucher.getSerialNumber());
     }
 }

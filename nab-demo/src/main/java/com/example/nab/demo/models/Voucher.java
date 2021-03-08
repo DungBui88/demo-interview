@@ -33,7 +33,7 @@ public class Voucher implements Serializable {
     private String userName;
     private String userPhoneNumber;
     private String voucherType;
-    private String serialNumbers;
+    private String serialNumber;
     private String paymentTransactionId;
     private LocalDateTime createdTime;
     private LocalDateTime expiredTime;

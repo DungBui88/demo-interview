@@ -12,5 +12,5 @@ spring:
 
 client:
   voucher-generator:
-    response-timeout: 10000 # milis
-    delay-response-time: 8 #second, this for testing !!!
+    response-timeout: 100 # milis
+    delay-response-time: 5 #second, this for testing !!!
